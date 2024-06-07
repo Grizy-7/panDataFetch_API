@@ -1,0 +1,63 @@
+pipeline {
+    agent any
+
+    environment {
+        // Define any necessary environment variables
+        MAVEN_HOME = tool 'Maven' // Assumes you have a Maven tool named 'Maven' configured in Jenkins
+        JAVA_HOME = tool 'JDK' // Assumes you have a JDK tool named 'JDK' configured in Jenkins
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                // Checkout code from version control
+                git 'https://github.com/your-repo/your-project.git'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                // Build the project using Maven
+                sh "${MAVEN_HOME}/bin/mvn clean install"
+            }
+        }
+
+        stage('Test') {
+            steps {
+                // Run tests using Maven
+                sh "${MAVEN_HOME}/bin/mvn test"
+            }
+        }
+
+        stage('Package') {
+            steps {
+                // Package the application
+                sh "${MAVEN_HOME}/bin/mvn package"
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                // Deploy the application
+                // This step will vary based on your deployment strategy (e.g., copying files, Docker, Kubernetes, etc.)
+                // For simplicity, assuming a local deployment for this example
+                sh """
+                    mkdir -p /opt/spring-boot-app
+                    cp target/demo-0.0.1-SNAPSHOT.jar /opt/spring-boot-app/
+                    # You might need to stop the existing application before starting the new one
+                    pkill -f 'java -jar' || true
+                    nohup java -jar /opt/spring-boot-app/demo-0.0.1-SNAPSHOT.jar &
+                """
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Build and deployment succeeded!'
+        }
+        failure {
+            echo 'Build or deployment failed!'
+        }
+    }
+}
